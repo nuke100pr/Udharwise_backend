@@ -6,7 +6,12 @@ WORKDIR /rails
 
 # 3) OS packages needed to compile the `pg` gem (Postgres driver)
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential libpq-dev libyaml-dev && \
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      libpq-dev \
+      libyaml-dev \
+      libvips42 \
+      curl && \
     rm -rf /var/lib/apt/lists/*
 
 # 4) Install gems first (better Docker layer caching)
