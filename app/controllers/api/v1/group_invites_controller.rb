@@ -3,6 +3,23 @@ module Api
     class GroupInvitesController < ApplicationController
       before_action :authenticate_user!
 
+
+      def index
+        group = current_user.groups.find(params.require(:group_id))
+        invites = group.group_invites.includes(:invitee, :inviter).order(created_at: :desc)
+        render json: invites.map { |invite|
+          {
+            id: invite.id,
+            status: invite.status,
+            created_at: invite.created_at,
+            inviter: { id: invite.inviter_id, handle: invite.inviter.handle },
+            invitee: { id: invite.invitee_id, handle: invite.invitee.handle }
+          }
+        }
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "group_not_found_or_not_a_member" }, status: :not_found
+      end
+
       def create
         group = current_user.groups.find(params.require(:group_id))
         return render json: { error: "group_archived" }, status: :unprocessable_entity if group.archived?

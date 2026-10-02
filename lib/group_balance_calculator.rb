@@ -1,11 +1,11 @@
+# Balances are always derived from active expense splits (paid - share).
+# Nothing is stored for balances, simplify, or "settled" flags.
 class GroupBalanceCalculator
   def self.nets_for(group)
     nets = Hash.new(0)
 
     group.expenses.where(archived_at: nil).includes(:expense_participants).find_each do |expense|
       expense.expense_participants.each do |p|
-        next if p.settled?
-
         nets[p.user_id] += p.paid_paise - p.share_paise
       end
     end
@@ -14,7 +14,7 @@ class GroupBalanceCalculator
   end
 
   # Greedy debt simplification: minimal transfers that clear open nets.
-  # Returns array of { from_user_id:, to_user_id:, amount_paise: }
+  # Computed only — never persisted.
   def self.simplify(group)
     nets = nets_for(group)
 

@@ -2,6 +2,8 @@ module Api
   module V1
     module Auth
       class OtpController < ApplicationController
+        include AuthenticatesWithJwt
+
         def request_otp
           email = params.require(:email).to_s.strip.downcase
           code = SecureRandom.random_number(10**6).to_s.rjust(6, "0")
@@ -25,35 +27,33 @@ module Api
           end
 
           user = ::User.find_by(email: email)
+          password = params[:password].to_s
 
           if user.nil?
             phone = params[:phone].to_s.strip
             handle = params[:handle].to_s.strip.downcase.delete_prefix("@")
 
-            if phone.blank? || handle.blank?
-              # Keep OTP so client can retry verify with phone + handle
+            if phone.blank? || handle.blank? || password.blank?
               return render json: {
                 error: "onboarding_required",
-                required: %w[phone handle],
-                message: "New user — call verify again with the same code, plus phone and handle"
+                required: %w[phone handle password],
+                message: "New user — call verify again with the same code, plus phone, handle, and password (min 8 chars)"
               }, status: :unprocessable_entity
             end
 
-            user = ::User.create!(email: email, phone: phone, handle: handle)
+            user = ::User.create!(
+              email: email,
+              phone: phone,
+              handle: handle,
+              password: password
+            )
+          elsif password.present? && !user.password_set?
+            # Existing OTP user can set a password on verify
+            user.update!(password: password)
           end
 
           ::OtpStore.clear(email)
-          token = ::JsonWebToken.encode({ user_id: user.id })
-
-          render json: {
-            token: token,
-            user: {
-              id: user.id,
-              email: user.email,
-              handle: user.handle,
-              phone: user.phone
-            }
-          }, status: :ok
+          render_auth_success(user)
         rescue ActiveRecord::RecordInvalid => e
           render json: { error: e.record.errors.full_messages }, status: :unprocessable_entity
         end

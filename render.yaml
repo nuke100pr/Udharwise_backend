@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: expenses-api
+    runtime: ruby
+    plan: free
+    region: singapore
+    buildCommand: bundle install
+    startCommand: bin/rails db:prepare && bin/rails server -b 0.0.0.0 -p $PORT
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_LEVEL
+        value: info
+      - key: ACTIVE_JOB_ADAPTER
+        value: async
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: expenses-db
+          property: connectionString
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: RAILS_ALLOWED_HOSTS
+        sync: false
+
+databases:
+  - name: expenses-db
+    plan: free
+    databaseName: expenses
+    user: expenses

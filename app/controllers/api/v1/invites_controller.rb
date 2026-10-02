@@ -3,6 +3,28 @@ module Api
     class InvitesController < ApplicationController
       before_action :authenticate_user!
 
+
+      def index
+        invites = ::GroupInvite
+          .where(invitee_id: current_user.id, status: "pending")
+          .includes(:group, :inviter)
+          .order(created_at: :desc)
+
+        render json: invites.map { |invite|
+          {
+            id: invite.id,
+            status: invite.status,
+            created_at: invite.created_at,
+            group: {
+              id: invite.group_id,
+              name: invite.group.name,
+              archived_at: invite.group.archived_at
+            },
+            inviter: { id: invite.inviter_id, handle: invite.inviter.handle }
+          }
+        }
+      end
+
       def accept
         invite = ::GroupInvite.find(params[:id])
         return render json: { error: "forbidden" }, status: :forbidden unless invite.invitee_id == current_user.id

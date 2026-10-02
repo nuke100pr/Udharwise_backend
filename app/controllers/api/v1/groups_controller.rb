@@ -8,6 +8,20 @@ module Api
         render json: groups.as_json(only: [:id, :name, :description, :archived_at, :created_by_id, :created_at])
       end
 
+      def show
+        group = current_user.groups.find(params[:id])
+        render json: group.as_json(only: [:id, :name, :description, :archived_at, :created_by_id, :created_at])
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "group_not_found_or_not_a_member" }, status: :not_found
+      end
+
+      def members
+        group = current_user.groups.find(params[:id])
+        render json: group.users.order(:handle).as_json(only: [:id, :email, :handle, :phone])
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "group_not_found_or_not_a_member" }, status: :not_found
+      end
+
       def create
         group = ::Group.new(
           name: params.require(:name),
@@ -84,6 +98,35 @@ module Api
             }
           }
         }
+      end
+
+      def settle_all
+        group = current_user.groups.find(params[:id])
+        return render json: { error: "group_archived" }, status: :forbidden if group.archived?
+
+        summary = ::ExpenseSettlement.apply_all!(group, current_user)
+
+        ::AuditLogger.record(
+          group: group,
+          actor: current_user,
+          action: "group.settle_all",
+          entity: group,
+          metadata: {
+            settled_count: summary[:settled_count],
+            total_paise: summary[:total_paise],
+            payees: summary[:payees]
+          }
+        )
+
+        render json: {
+          message: "shares_settled",
+          group_id: group.id,
+          **summary
+        }
+      rescue ::ExpenseSettlement::Error => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "group_not_found_or_not_a_member" }, status: :not_found
       end
     end
   end

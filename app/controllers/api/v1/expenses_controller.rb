@@ -6,10 +6,7 @@ module Api
       def index
         group = current_user.groups.find(params[:group_id])
         expenses = group.expenses.includes(:expense_participants).order(created_at: :desc)
-        render json: expenses.as_json(
-          only: [:id, :description, :total_paise, :archived_at, :created_by_id, :created_at],
-          include: { expense_participants: { only: [:user_id, :share_paise, :paid_paise, :settled_at] } }
-        )
+        render json: expenses.map { |expense| serialize_expense(expense) }
       end
 
       def create
@@ -59,10 +56,7 @@ module Api
           metadata: { total_paise: expense.total_paise, description: expense.description }
         )
 
-        render json: expense.as_json(
-          only: [:id, :description, :total_paise, :archived_at, :created_by_id, :created_at],
-          include: { expense_participants: { only: [:user_id, :share_paise, :paid_paise, :settled_at] } }
-        ), status: :created
+        render json: serialize_expense(expense), status: :created
       rescue ActiveRecord::RecordNotFound
         render json: { error: "group_not_found_or_not_a_member" }, status: :not_found
       rescue ActiveRecord::RecordInvalid => e
@@ -89,7 +83,7 @@ module Api
         render json: expense.as_json(only: [:id, :description, :archived_at])
       end
 
-      # Current user fully settles their remaining share on this expense (no partial amount).
+      # Settle by adjusting paid_paise on the split (source of truth). Balances recalculate.
       def settle_share
         group = current_user.groups.find(params[:group_id])
         return render json: { error: "group_archived" }, status: :forbidden if group.archived?
@@ -97,31 +91,53 @@ module Api
         expense = group.expenses.find(params[:id])
         return render json: { error: "expense_archived" }, status: :forbidden if expense.archived?
 
-        participant = expense.expense_participants.find_by!(user_id: current_user.id)
-        return render json: { error: "already_settled" }, status: :unprocessable_entity if participant.settled?
-
-        owed = participant.owed_paise
-        return render json: { error: "nothing_to_settle" }, status: :unprocessable_entity if owed <= 0
-
-        participant.update!(settled_at: Time.current)
+        result = ::ExpenseSettlement.apply!(expense, current_user)
 
         ::AuditLogger.record(
           group: group,
           actor: current_user,
           action: "expense.settle_share",
           entity: expense,
-          metadata: { user_id: current_user.id, settled_owed_paise: owed }
+          metadata: {
+            user_id: current_user.id,
+            settled_owed_paise: result[:owed_paise],
+            allocations: result[:allocations]
+          }
         )
 
         render json: {
           message: "share_settled",
           expense_id: expense.id,
           user_id: current_user.id,
-          settled_owed_paise: owed,
-          settled_at: participant.settled_at
+          settled_owed_paise: result[:owed_paise],
+          allocations: result[:allocations],
+          expense: serialize_expense(expense.reload)
         }
+      rescue ::ExpenseSettlement::Error => e
+        render json: { error: e.message }, status: :unprocessable_entity
       rescue ActiveRecord::RecordNotFound
         render json: { error: "not_found" }, status: :not_found
+      end
+
+      private
+
+      def serialize_expense(expense)
+        {
+          id: expense.id,
+          description: expense.description,
+          total_paise: expense.total_paise,
+          archived_at: expense.archived_at,
+          created_by_id: expense.created_by_id,
+          created_at: expense.created_at,
+          expense_participants: expense.expense_participants.map { |p|
+            {
+              user_id: p.user_id,
+              share_paise: p.share_paise,
+              paid_paise: p.paid_paise,
+              owed_paise: p.owed_paise
+            }
+          }
+        }
       end
     end
   end

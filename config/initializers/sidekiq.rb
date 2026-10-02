@@ -1,7 +1,9 @@
-Sidekiq.configure_server do |config|
-  config.redis = { url: ENV.fetch("REDIS_URL", "redis://redis:6379/0") }
-end
+if ENV["REDIS_URL"].to_s.strip.present?
+  Sidekiq.configure_server do |config|
+    config.redis = { url: ENV.fetch("REDIS_URL") }
+  end
 
-Sidekiq.configure_client do |config|
-  config.redis = { url: ENV.fetch("REDIS_URL", "redis://redis:6379/0") }
+  Sidekiq.configure_client do |config|
+    config.redis = { url: ENV.fetch("REDIS_URL") }
+  end
 end

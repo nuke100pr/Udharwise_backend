@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_125000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_153237) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -35,7 +35,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_125000) do
     t.integer "paid_paise", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.datetime "settled_at"
     t.index ["expense_id", "user_id"], name: "index_expense_participants_on_expense_id_and_user_id", unique: true
     t.index ["expense_id"], name: "index_expense_participants_on_expense_id"
     t.index ["user_id"], name: "index_expense_participants_on_user_id"
@@ -92,6 +91,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_125000) do
     t.string "handle"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "password_digest"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["handle"], name: "index_users_on_handle", unique: true
     t.index ["phone"], name: "index_users_on_phone", unique: true

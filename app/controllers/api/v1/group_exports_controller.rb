@@ -20,11 +20,12 @@ module Api
             "user_handle",
             "share_paise",
             "paid_paise",
-            "settled_at"
+            "owed_paise"
           ]
 
           expenses.each do |expense|
             expense.expense_participants.each do |p|
+              owed = [p.share_paise - p.paid_paise, 0].max
               out << [
                 expense.id,
                 expense.description,
@@ -35,7 +36,7 @@ module Api
                 p.user.handle,
                 p.share_paise,
                 p.paid_paise,
-                p.settled_at
+                owed
               ]
             end
           end

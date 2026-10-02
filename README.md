@@ -1,6 +1,6 @@
-# Expenses API
+# Udharwise API
 
-Household shared-expense backend (Rails API). Run with **Podman Compose** only.
+Udharwise shared-expense backend (Rails API). Run with **Podman Compose** only.
 
 ## Stack
 

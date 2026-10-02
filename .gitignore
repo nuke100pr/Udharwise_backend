@@ -7,8 +7,13 @@
 # Ignore bundler config.
 /.bundle
 
-# Ignore all environment files.
+# Ignore all environment files (keep *.example templates).
 /.env*
+!/.env*.example
+
+# Local dumps / bundler copy
+/*.csv
+/vendor/bundle/
 
 # Ignore all logfiles and tempfiles.
 /log/*
