@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  group: one
+  created_by: one
+  description: MyString
+  total_paise: 1
+  archived_at: 2026-10-02 12:27:27
+
+two:
+  group: two
+  created_by: two
+  description: MyString
+  total_paise: 1
+  archived_at: 2026-10-02 12:27:27

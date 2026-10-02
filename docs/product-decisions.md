@@ -45,7 +45,7 @@ People form **invite-only groups**, log expenses in **INR** with **dynamic integ
 |------|----------|
 | Email | Required, **unique** |
 | Phone | Required, **unique** |
-| Handle | Required, **unique**, starts with `@` (e.g. `@prakhar`) |
+| Handle | Required, **unique**, **no leading `@`** in storage (e.g. `prakhar`); UI may display `@prakhar` |
 | Login | **Email OTP only** (no password in v1) |
 | After OTP | Issue API token (**JWT**) |
 | OTP delivery | Email via Action Mailer; local: Mailpit in Podman |
@@ -68,7 +68,7 @@ People form **invite-only groups**, log expenses in **INR** with **dynamic integ
 | Isolation | Groups are distinct; expenses/transactions of one group are **mutually exclusive** from others |
 | Creation | Creator becomes a member (and is the initial admin/creator for tooling if needed) |
 | Joining | **Invite only** |
-| Invite flow | Creator (or entitled member — v1: inviter is a group member) searches user by **@handle** (global search) → sends invite → invitee **accepts** → membership created |
+| Invite flow | Creator (or entitled member — v1: inviter is a group member) searches user by **handle** (global search; client may send `@name` and API strips `@`) → sends invite → invitee **accepts** → membership created |
 | Removal | **No member can be removed** once added |
 | Delete | Do not delete groups; **archive / unarchive** instead |
 

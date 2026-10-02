@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  group: one
+  inviter: one
+  invitee: one
+  status: MyString
+
+two:
+  group: two
+  inviter: two
+  invitee: two
+  status: MyString
