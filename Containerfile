@@ -16,7 +16,11 @@ RUN apt-get update -qq && \
 
 # 4) Install gems first (better Docker layer caching)
 COPY Gemfile Gemfile.lock ./
-RUN bundle install
+RUN bundle install && bundle clean --force
+
+# Bust leftover Solid gems from older image layers when Gemfile changes
+ARG APP_REVISION=unknown
+RUN echo "revision=${APP_REVISION}"
 
 # 5) Copy the rest of the app (compose will also mount the folder live later)
 COPY . .
