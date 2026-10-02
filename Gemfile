@@ -31,7 +31,7 @@ gem "csv"
 gem "rack-cors"
 gem "redis", "~> 5.0"
 gem "sidekiq", "~> 7.0"
-gem "jwt", "~> 2.6"
+gem "jwt", "~> 3.3"
 
 
 group :development, :test do
